@@ -28,6 +28,10 @@
     "node": ">=20.0.0"
   },
   "scripts": {
+    "setup": "node scripts/setup-env.mjs",
+    "db:init": "node scripts/init-db.mjs",
+    "db:push": "drizzle-kit push",
+    "postinstall": "node scripts/patch-kysely.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -40,14 +44,16 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.4.1",
+    "@better-fetch/fetch": "^1.1.12",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
-    "@supabase/ssr": "^0.10.3",
-    "@supabase/supabase-js": "^2.106.0",
+    "better-auth": "^1.2.8",
+    "better-sqlite3": "^12.0.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.44.2",
     "lucide-react": "^1.8.0",
     "next": "16.2.6",
     "react": "19.2.4",
@@ -59,16 +65,19 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "tailwindcss": "^4",
     "typescript": "^6",
-    "vitest": "^4.1.6"
+    "vitest": "^4.1.6",
+    "wrangler": "^4.17.0"
   },
   "overrides": {
     "postcss": "^8.5.10",

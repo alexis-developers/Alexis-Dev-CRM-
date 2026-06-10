@@ -1,0 +1,13 @@
+name = "wa-crm"
+compatibility_date = "2025-01-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wa-crm-db"
+database_id = "local"
+
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "wa-crm-avatars"

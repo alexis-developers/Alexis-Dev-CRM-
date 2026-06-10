@@ -14,9 +14,9 @@ export function PipelineDonut({ data, loading }: PipelineDonutProps) {
   return (
     <section className="flex h-full flex-col rounded-xl border border-slate-800 bg-slate-900">
       <header className="border-b border-slate-800 px-5 py-4">
-        <h2 className="text-sm font-semibold text-white">Pipeline Value</h2>
+        <h2 className="text-sm font-semibold text-white">Valor do Funil</h2>
         <p className="mt-0.5 text-xs text-slate-500">
-          Open deals by stage
+          Negócios abertos por etapa
         </p>
       </header>
 
@@ -26,8 +26,8 @@ export function PipelineDonut({ data, loading }: PipelineDonutProps) {
         ) : data.stages.length === 0 ? (
           <EmptyState
             icon={GitBranch}
-            title="No open deals yet"
-            hint="Create deals in Pipelines to see stage breakdowns here."
+            title="Nenhum negócio aberto ainda"
+            hint="Crie negócios no Funil de Captação para ver o detalhamento de etapas aqui."
           />
         ) : (
           <>
@@ -42,7 +42,7 @@ export function PipelineDonut({ data, loading }: PipelineDonutProps) {
                   />
                   <span className="flex-1 truncate text-slate-300">{s.name}</span>
                   <span className="text-slate-500 tabular-nums">
-                    {s.dealCount} deal{s.dealCount === 1 ? '' : 's'}
+                    {s.dealCount} {s.dealCount === 1 ? 'negócio' : 'negócios'}
                   </span>
                   <span className="w-20 text-right text-slate-300 tabular-nums">
                     {formatCurrencyShort(s.totalValue)}
@@ -138,7 +138,7 @@ function arcPath(cx: number, cy: number, r: number, startRad: number, endRad: nu
 }
 
 function formatCurrencyShort(v: number): string {
-  if (v >= 1_000_000) return `$${(v / 1_000_000).toFixed(1)}M`
-  if (v >= 1_000) return `$${(v / 1_000).toFixed(1)}k`
-  return `$${v.toFixed(0)}`
+  if (v >= 1_000_000) return `R$ ${(v / 1_000_000).toFixed(1)}M`
+  if (v >= 1_000) return `R$ ${(v / 1_000).toFixed(1)}mil`
+  return `R$ ${v.toFixed(0)}`
 }

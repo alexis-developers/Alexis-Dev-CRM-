@@ -20,14 +20,14 @@ import {
 import type { Tag } from '@/types';
 
 const PRESET_COLORS = [
-  { name: 'Red', value: '#ef4444' },
-  { name: 'Orange', value: '#f97316' },
-  { name: 'Amber', value: '#f59e0b' },
-  { name: 'Emerald', value: '#10b981' },
-  { name: 'Cyan', value: '#06b6d4' },
-  { name: 'Blue', value: '#3b82f6' },
-  { name: 'Violet', value: '#8b5cf6' },
-  { name: 'Pink', value: '#ec4899' },
+  { name: 'Vermelho', value: '#ef4444' },
+  { name: 'Laranja', value: '#f97316' },
+  { name: 'Âmbar', value: '#f59e0b' },
+  { name: 'Esmeralda', value: '#10b981' },
+  { name: 'Ciano', value: '#06b6d4' },
+  { name: 'Azul', value: '#3b82f6' },
+  { name: 'Violeta', value: '#8b5cf6' },
+  { name: 'Rosa', value: '#ec4899' },
 ];
 
 export function TagManager() {
@@ -51,7 +51,6 @@ export function TagManager() {
       return;
     }
     fetchTags(user.id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, user?.id]);
 
   async function fetchTags(userId: string) {
@@ -68,7 +67,7 @@ export function TagManager() {
       setTags(data || []);
     } catch (err) {
       console.error('Failed to fetch tags:', err);
-      toast.error('Failed to load tags');
+      toast.error('Falha ao carregar tags');
     } finally {
       setLoading(false);
     }
@@ -76,14 +75,14 @@ export function TagManager() {
 
   async function handleCreate() {
     if (!newTagName.trim()) {
-      toast.error('Tag name is required');
+      toast.error('O nome da tag é obrigatório');
       return;
     }
 
     try {
       setSaving(true);
       if (!user) {
-        toast.error('Not authenticated');
+        toast.error('Não autenticado');
         return;
       }
 
@@ -97,14 +96,14 @@ export function TagManager() {
 
       if (error) throw error;
 
-      toast.success('Tag created successfully');
+      toast.success('Tag criada com sucesso');
       setDialogOpen(false);
       setNewTagName('');
       setSelectedColor(PRESET_COLORS[3].value);
       if (user) await fetchTags(user.id);
     } catch (err) {
       console.error('Create error:', err);
-      toast.error('Failed to create tag');
+      toast.error('Falha ao criar tag');
     } finally {
       setSaving(false);
     }
@@ -127,13 +126,13 @@ export function TagManager() {
 
       if (error) throw error;
 
-      toast.success('Tag deleted');
+      toast.success('Tag excluída');
       setTags((prev) => prev.filter((t) => t.id !== tagToDelete.id));
       setDeleteDialogOpen(false);
       setTagToDelete(null);
     } catch (err) {
       console.error('Delete error:', err);
-      toast.error('Failed to delete tag');
+      toast.error('Falha ao excluir tag');
     } finally {
       setDeleting(false);
     }
@@ -152,7 +151,7 @@ export function TagManager() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">Tags</h2>
-          <p className="text-sm text-slate-400">Organize your contacts with color-coded tags.</p>
+          <p className="text-sm text-slate-400">Organize seus contatos com tags coloridas.</p>
         </div>
         <Button
           onClick={() => {
@@ -163,15 +162,15 @@ export function TagManager() {
           className="bg-violet-600 hover:bg-violet-700 text-white"
         >
           <Plus className="size-4" />
-          New Tag
+          Nova Tag
         </Button>
       </div>
 
       {tags.length === 0 ? (
         <Card className="bg-slate-900 border-slate-700 ring-0 ring-transparent">
           <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <p className="text-slate-400 text-sm">No tags yet.</p>
-            <p className="text-slate-500 text-xs mt-1">Create tags to categorize your contacts.</p>
+            <p className="text-slate-400 text-sm">Nenhuma tag ainda.</p>
+            <p className="text-slate-500 text-xs mt-1">Crie tags para categorizar seus contatos.</p>
           </CardContent>
         </Card>
       ) : (
@@ -210,17 +209,17 @@ export function TagManager() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="bg-slate-900 border-slate-700 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">New Tag</DialogTitle>
+            <DialogTitle className="text-white">Nova Tag</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Create a new tag with a name and color.
+              Crie uma nova tag com um nome e cor.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-slate-300">Tag Name</Label>
+              <Label className="text-slate-300">Nome da Tag</Label>
               <Input
-                placeholder="e.g. VIP Customer"
+                placeholder="ex: Cliente VIP"
                 value={newTagName}
                 onChange={(e) => setNewTagName(e.target.value)}
                 className="bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
@@ -231,7 +230,7 @@ export function TagManager() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-slate-300">Color</Label>
+              <Label className="text-slate-300">Cor</Label>
               <div className="flex gap-2 flex-wrap">
                 {PRESET_COLORS.map((color) => (
                   <button
@@ -250,7 +249,7 @@ export function TagManager() {
 
             {/* Preview */}
             <div className="space-y-2">
-              <Label className="text-slate-300">Preview</Label>
+              <Label className="text-slate-300">Visualização</Label>
               <div>
                 <span
                   className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium"
@@ -264,7 +263,7 @@ export function TagManager() {
                     className="size-2 rounded-full"
                     style={{ backgroundColor: selectedColor }}
                   />
-                  {newTagName || 'Tag Name'}
+                  {newTagName || 'Nome da Tag'}
                 </span>
               </div>
             </div>
@@ -276,7 +275,7 @@ export function TagManager() {
               onClick={() => setDialogOpen(false)}
               className="border-slate-700 text-slate-300 hover:bg-slate-800"
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={handleCreate}
@@ -286,10 +285,10 @@ export function TagManager() {
               {saving ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Creating...
+                  Criando...
                 </>
               ) : (
-                'Create Tag'
+                'Criar Tag'
               )}
             </Button>
           </DialogFooter>
@@ -300,10 +299,10 @@ export function TagManager() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="bg-slate-900 border-slate-700 sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-white">Delete Tag</DialogTitle>
+            <DialogTitle className="text-white">Excluir Tag</DialogTitle>
             <DialogDescription className="text-slate-400">
-              Are you sure you want to delete the tag &quot;{tagToDelete?.name}&quot;? This will remove
-              it from all contacts. This action cannot be undone.
+              Tem certeza de que deseja excluir a tag &quot;{tagToDelete?.name}&quot;? Isso a removerá
+              de todos os contatos. Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="bg-slate-900 border-slate-700">
@@ -312,7 +311,7 @@ export function TagManager() {
               onClick={() => setDeleteDialogOpen(false)}
               className="border-slate-700 text-slate-300 hover:bg-slate-800"
             >
-              Cancel
+              Cancelar
             </Button>
             <Button
               onClick={handleDelete}
@@ -322,10 +321,10 @@ export function TagManager() {
               {deleting ? (
                 <>
                   <Loader2 className="size-4 animate-spin" />
-                  Deleting...
+                  Excluindo...
                 </>
               ) : (
-                'Delete Tag'
+                'Excluir Tag'
               )}
             </Button>
           </DialogFooter>

@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { useTotalUnread } from "@/hooks/use-total-unread";
+import { AlexisLogo } from "@/components/ui/alexis-logo";
 import {
   LayoutDashboard,
   MessageSquare,
@@ -17,6 +18,16 @@ import {
   LogOut,
   User,
   X,
+  Globe,
+  UserPlus,
+  CheckSquare,
+  Calendar,
+  Phone,
+  FolderOpen,
+  Headphones,
+  BarChart2,
+  Monitor,
+  Megaphone,
 } from "lucide-react";
 import {
   Avatar,
@@ -32,16 +43,25 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/inbox", label: "Inbox", icon: MessageSquare },
-  { href: "/contacts", label: "Contacts", icon: Users },
-  { href: "/pipelines", label: "Pipelines", icon: GitBranch },
-  { href: "/broadcasts", label: "Broadcasts", icon: Radio },
-  { href: "/automations", label: "Automations", icon: Zap },
+  { href: "/dashboard", label: "Painel", icon: LayoutDashboard },
+  { href: "/feeds", label: "Timeline Social", icon: Globe },
+  { href: "/inbox", label: "Caixa de Entrada", icon: MessageSquare },
+  { href: "/reports", label: "Estatísticas", icon: BarChart2 },
+  { href: "/leads", label: "Pré-Vendas", icon: UserPlus },
+  { href: "/pipelines", label: "Vendas Efetuadas", icon: GitBranch },
+  { href: "/contacts", label: "Clientes", icon: Users },
+  { href: "/tasks", label: "Tarefas", icon: CheckSquare },
+  { href: "/events", label: "Reuniões", icon: Calendar },
+  { href: "/calls", label: "Chamadas", icon: Phone },
+  { href: "/documents", label: "Arquivos", icon: FolderOpen },
+  { href: "/tickets", label: "Desk", icon: Headphones },
+  { href: "/broadcasts", label: "Divulgação", icon: Megaphone },
+  { href: "/automations", label: "Automações", icon: Zap },
+  { href: "/website-visits", label: "Visitas no Site", icon: Monitor },
 ];
 
 const bottomNavItems = [
-  { href: "/settings", label: "Settings", icon: Settings },
+  { href: "/settings", label: "Configurações", icon: Settings },
 ];
 
 interface SidebarProps {
@@ -55,16 +75,11 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
   const { profile, signOut } = useAuth();
   const totalUnread = useTotalUnread();
 
-  // Close the drawer when route changes — users opened it to navigate,
-  // so once they pick a destination the drawer should get out of the way.
   useEffect(() => {
     onClose?.();
-    // Only pathname drives this — onClose identity doesn't need to re-run it.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  // Lock body scroll and allow Escape to close while the drawer is open on
-  // mobile. No-ops on desktop because the sidebar isn't positioned there.
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -81,9 +96,6 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
   return (
     <>
-      {/* Backdrop — only exists on mobile and only when open. Clicking
-          it closes the drawer. Hidden from lg+ since the sidebar is
-          part of the main flex row there. */}
       <button
         type="button"
         aria-label="Close menu"
@@ -98,25 +110,16 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          // Mobile: fixed drawer that slides in from the left.
           "fixed inset-y-0 left-0 z-40 flex h-full w-64 flex-col border-r border-slate-800 bg-slate-900",
           "transition-transform duration-200 ease-out will-change-transform",
           open ? "translate-x-0" : "-translate-x-full",
-          // Desktop: static, always visible — reset all the mobile framing.
           "lg:static lg:z-0 lg:w-60 lg:translate-x-0 lg:transition-none",
         )}
         aria-label="Primary"
       >
-        {/* Logo row. On mobile we put a close button here; on desktop the
-            close button is hidden since the sidebar is always-visible. */}
         <div className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-800 px-4">
           <Link href="/dashboard" className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-violet-500">
-              <MessageSquare className="h-4 w-4 text-white" />
-            </div>
-            <span className="text-sm font-semibold text-white">
-              CRM Template for WhatsApp
-            </span>
+            <AlexisLogo className="h-8 w-auto" />
           </Link>
           <button
             type="button"
@@ -130,7 +133,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-0.5">
             {navItems.map((item) => {
               const isActive =
                 pathname === item.href ||
@@ -144,22 +147,21 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   <Link
                     href={item.href}
                     className={cn(
-                      // Taller on mobile so fingers can hit the row reliably (≥44px).
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-violet-500/10 text-violet-500"
+                        ? "bg-primary/10 text-primary"
                         : "text-slate-400 hover:bg-slate-800 hover:text-white",
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
-                    <span className="flex-1">{item.label}</span>
+                    <item.icon className="h-4 w-4 shrink-0" />
+                    <span className="flex-1 truncate">{item.label}</span>
                     {showUnreadDot && (
                       <span
-                        aria-label={`${totalUnread} unread conversation${totalUnread === 1 ? "" : "s"}`}
+                        aria-label={`${totalUnread} não lidas`}
                         className="relative flex h-2 w-2"
                       >
-                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-violet-400 opacity-75" />
-                        <span className="relative inline-flex h-2 w-2 rounded-full bg-violet-500" />
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+                        <span className="relative inline-flex h-2 w-2 rounded-full bg-primary" />
                       </span>
                     )}
                   </Link>
@@ -168,9 +170,9 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
             })}
           </ul>
 
-          <div className="my-4 border-t border-slate-800" />
+          <div className="my-3 border-t border-slate-800" />
 
-          <ul className="flex flex-col gap-1">
+          <ul className="flex flex-col gap-0.5">
             {bottomNavItems.map((item) => {
               const isActive = pathname.startsWith(item.href);
               return (
@@ -178,13 +180,13 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                   <Link
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors lg:py-2",
+                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                       isActive
-                        ? "bg-violet-500/10 text-violet-500"
+                        ? "bg-primary/10 text-primary"
                         : "text-slate-400 hover:bg-slate-800 hover:text-white",
                     )}
                   >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-4 w-4 shrink-0" />
                     {item.label}
                   </Link>
                 </li>
@@ -204,7 +206,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                     alt={profile.full_name ?? "Avatar"}
                   />
                 ) : null}
-                <AvatarFallback className="bg-violet-500/10 text-sm font-medium text-violet-500">
+                <AvatarFallback className="bg-primary/10 text-sm font-medium text-primary">
                   {profile?.full_name?.charAt(0)?.toUpperCase() ??
                     profile?.email?.charAt(0)?.toUpperCase() ??
                     "U"}
@@ -212,7 +214,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
               </Avatar>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-medium text-white">
-                  {profile?.full_name ?? "User"}
+                  {profile?.full_name ?? "Usuário"}
                 </p>
                 <p className="truncate text-xs text-slate-400">
                   {profile?.email ?? ""}
@@ -235,7 +237,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 }
               >
                 <User className="size-4" />
-                Profile
+                Perfil
               </DropdownMenuItem>
               <DropdownMenuItem
                 render={
@@ -247,7 +249,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 }
               >
                 <Settings className="size-4" />
-                Settings
+                Configurações
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-slate-800" />
               <DropdownMenuItem
@@ -255,7 +257,7 @@ export function Sidebar({ open = false, onClose }: SidebarProps) {
                 className="text-slate-200 focus:bg-slate-800 focus:text-white"
               >
                 <LogOut className="size-4" />
-                Sign out
+                Sair
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -43,9 +43,8 @@ const SECURITY_HEADERS = [
       // tiny inline assets.
       "img-src 'self' data: blob: https:",
       "font-src 'self' data:",
-      // Supabase REST + realtime (WSS). All Meta API calls happen
-      // server-side, so graph.facebook.com does not belong here.
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co",
+      // API calls are all same-origin or server-side.
+      "connect-src 'self'",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
@@ -54,6 +53,7 @@ const SECURITY_HEADERS = [
 ] as const;
 
 const nextConfig: NextConfig = {
+  // output: "standalone", // disabled for Cloudflare Pages deployment
   /**
    * Cache-Control policy.
    *

@@ -22,21 +22,69 @@ export default function Icon() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#7c3aed", // violet-600 (Hostinger-aligned purple)
+          background: "#090d16",
           borderRadius: 6,
+          border: "1px solid rgba(255,255,255,0.08)",
         }}
       >
         <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
+          width="22"
+          height="22"
+          viewBox="0 0 80 80"
           fill="none"
-          stroke="#ffffff"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
         >
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+          <path
+            d="M 64 54 H 20 C 14.5 54 10 49.5 10 44 V 24 C 10 18.5 14.5 14 20 14 H 60 C 65.5 14 70 18.5 70 24 V 38"
+            stroke="#10b981"
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 22 32 L 16 38 L 22 44"
+            stroke="#ffffff"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 31 29 L 26 47"
+            stroke="#ffffff"
+            strokeWidth="4"
+            strokeLinecap="round"
+          />
+          <path
+            d="M 35 32 L 41 38 L 35 44"
+            stroke="#ffffff"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 32 54 C 44 54 54 48 66 30"
+            stroke="#10b981"
+            strokeWidth="5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M 54 28 L 68 26 L 66 40 Z"
+            fill="#10b981"
+          />
+          <circle
+            cx="74"
+            cy="20"
+            r="8"
+            stroke="#10b981"
+            strokeWidth="3.5"
+            fill="none"
+          />
+          <circle
+            cx="74"
+            cy="20"
+            r="2.5"
+            fill="#10b981"
+          />
         </svg>
       </div>
     ),

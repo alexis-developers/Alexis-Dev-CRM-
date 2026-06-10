@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import type { Message, Conversation } from "@/types";
-import type { RealtimeChannel } from "@supabase/supabase-js";
 
 interface RealtimeEvent<T> {
   eventType: "INSERT" | "UPDATE" | "DELETE";
@@ -16,22 +14,24 @@ interface UseRealtimeOptions {
   onMessageEvent?: (event: RealtimeEvent<Message>) => void;
   onConversationEvent?: (event: RealtimeEvent<Conversation>) => void;
   enabled?: boolean;
+  /** Poll interval in ms — default 4000 */
+  pollInterval?: number;
 }
 
+// Polling-based replacement for the Supabase WebSocket realtime hook.
+// Calls /api/realtime/poll to get changes since the last known state.
 export function useRealtime({
   channelName,
   onMessageEvent,
   onConversationEvent,
   enabled = true,
+  pollInterval = 4000,
 }: UseRealtimeOptions) {
-  const channelRef = useRef<RealtimeChannel | null>(null);
   const [isConnected, setIsConnected] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastMessageIdRef = useRef<string | null>(null);
+  const lastConversationUpdatedRef = useRef<string | null>(null);
 
-  // Store latest callbacks in refs to avoid re-subscribing when the
-  // parent re-renders with fresh closures. Assigned inside an effect
-  // so the mutation doesn't happen during render (React 19's refs
-  // rule) — subscribers only read `.current` inside async Realtime
-  // callbacks, which always run after the render that updates it.
   const onMessageRef = useRef(onMessageEvent);
   const onConversationRef = useRef(onConversationEvent);
   useEffect(() => {
@@ -39,55 +39,56 @@ export function useRealtime({
     onConversationRef.current = onConversationEvent;
   });
 
+  const poll = useCallback(async () => {
+    try {
+      const params = new URLSearchParams({ channel: channelName });
+      if (lastMessageIdRef.current) params.set('lastMessageId', lastMessageIdRef.current);
+      if (lastConversationUpdatedRef.current) params.set('lastConvUpdated', lastConversationUpdatedRef.current);
+
+      const res = await fetch(`/api/realtime/poll?${params}`);
+      if (!res.ok) return;
+
+      const { newMessages, updatedConversations } = await res.json() as {
+        newMessages: Message[];
+        updatedConversations: Conversation[];
+      };
+
+      for (const msg of newMessages ?? []) {
+        lastMessageIdRef.current = msg.id;
+        onMessageRef.current?.({ eventType: 'INSERT', new: msg, old: {} });
+      }
+
+      for (const conv of updatedConversations ?? []) {
+        if (!lastConversationUpdatedRef.current || conv.updated_at > lastConversationUpdatedRef.current) {
+          lastConversationUpdatedRef.current = conv.updated_at;
+        }
+        onConversationRef.current?.({ eventType: 'UPDATE', new: conv, old: {} });
+      }
+    } catch {
+      // ignore transient errors
+    }
+  }, [channelName]);
+
   useEffect(() => {
-    if (!enabled) return;
+    if (!enabled) {
+      setIsConnected(false);
+      return;
+    }
 
-    const supabase = createClient();
-
-    const channel = supabase
-      .channel(channelName)
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
-        (payload) => {
-          onMessageRef.current?.({
-            eventType: payload.eventType as RealtimeEvent<Message>["eventType"],
-            new: payload.new as Message,
-            old: payload.old as Partial<Message>,
-          });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "conversations" },
-        (payload) => {
-          onConversationRef.current?.({
-            eventType: payload.eventType as RealtimeEvent<Conversation>["eventType"],
-            new: payload.new as Conversation,
-            old: payload.old as Partial<Conversation>,
-          });
-        }
-      )
-      .subscribe((status) => {
-        setIsConnected(status === "SUBSCRIBED");
-      });
-
-    channelRef.current = channel;
+    setIsConnected(true);
+    timerRef.current = setInterval(poll, pollInterval);
 
     return () => {
-      supabase.removeChannel(channel);
-      channelRef.current = null;
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
       setIsConnected(false);
     };
-  }, [channelName, enabled]);
+  }, [enabled, poll, pollInterval]);
 
   const unsubscribe = useCallback(() => {
-    if (channelRef.current) {
-      const supabase = createClient();
-      supabase.removeChannel(channelRef.current);
-      channelRef.current = null;
-      setIsConnected(false);
-    }
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = null;
+    setIsConnected(false);
   }, []);
 
   return { isConnected, unsubscribe };

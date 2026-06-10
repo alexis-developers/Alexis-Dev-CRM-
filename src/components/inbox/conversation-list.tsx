@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import type { Conversation, ConversationStatus } from "@/types";
 import { Search, ChevronDown } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -37,10 +38,10 @@ const STATUS_COLORS: Record<ConversationStatus, string> = {
 };
 
 const FILTER_OPTIONS: { label: string; value: ConversationStatus | "all" }[] = [
-  { label: "All", value: "all" },
-  { label: "Open", value: "open" },
-  { label: "Pending", value: "pending" },
-  { label: "Closed", value: "closed" },
+  { label: "Todos", value: "all" },
+  { label: "Abertos", value: "open" },
+  { label: "Pendentes", value: "pending" },
+  { label: "Fechados", value: "closed" },
 ];
 
 export function ConversationList({
@@ -155,14 +156,14 @@ export function ConversationList({
           <Input
             value={search}
             onChange={handleSearchChange}
-            placeholder="Search conversations..."
+            placeholder="Buscar conversas..."
             className="border-slate-700 bg-slate-800 pl-9 text-sm text-white placeholder-slate-500 focus:border-violet-500/50"
           />
         </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger className="inline-flex items-center justify-center h-7 gap-1 px-2 text-xs text-slate-400 hover:text-white rounded-md hover:bg-slate-800">
-              {activeFilter?.label ?? "All"}
+              {activeFilter?.label ?? "Todos"}
               <ChevronDown className="h-3 w-3" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -195,7 +196,7 @@ export function ConversationList({
           </div>
         ) : filtered.length === 0 ? (
           <div className="px-4 py-12 text-center">
-            <p className="text-sm text-slate-500">No conversations found</p>
+            <p className="text-sm text-slate-500">Nenhuma conversa encontrada</p>
           </div>
         ) : (
           <div className="flex flex-col">
@@ -226,7 +227,7 @@ function ConversationItem({
   onSelect,
 }: ConversationItemProps) {
   const contact = conversation.contact;
-  const displayName = contact?.name || contact?.phone || "Unknown";
+  const displayName = contact?.name || contact?.phone || "Desconhecido";
   const initials = displayName.charAt(0).toUpperCase();
 
   const handleClick = useCallback(() => {
@@ -236,6 +237,7 @@ function ConversationItem({
   const timeAgo = conversation.last_message_at
     ? formatDistanceToNow(new Date(conversation.last_message_at), {
         addSuffix: false,
+        locale: ptBR,
       })
     : "";
 
@@ -270,7 +272,7 @@ function ConversationItem({
         </div>
         <div className="mt-0.5 flex items-center justify-between gap-2">
           <p className="truncate text-xs text-slate-400">
-            {conversation.last_message_text || "No messages yet"}
+            {conversation.last_message_text || "Sem mensagens ainda"}
           </p>
           <div className="flex shrink-0 items-center gap-1.5">
             {conversation.unread_count > 0 && (

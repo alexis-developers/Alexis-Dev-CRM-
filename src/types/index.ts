@@ -6,6 +6,9 @@ export interface Profile {
   avatar_url?: string;
   role: string;
   created_at: string;
+  is_super_admin?: boolean;
+  must_change_password?: boolean;
+  ativo?: boolean;
 }
 
 export interface Contact {
@@ -385,3 +388,96 @@ export interface AutomationLog {
   created_at: string;
   contact?: Contact;
 }
+
+// ============================================================
+// Feeds (Internal Social Network)
+// ============================================================
+
+export type FeedPostTipo = 'sistema' | 'manual' | 'anuncio' | 'marco';
+export type FeedPostCategoria = 'venda' | 'contato' | 'chamada' | 'tarefa' | 'visita_site' | 'comentario_geral' | 'outros';
+export type FeedPostAutorTipo = 'usuario' | 'sistema' | 'bot';
+export type FeedPostVisibilidade = 'publico' | 'equipe' | 'privado';
+export type FeedReacaoTipo = 'curtir' | 'amei' | 'parabens' | 'importante' | 'risada';
+
+export interface Feed {
+  id: string;
+  user_id: string;
+  tipo: FeedPostTipo;
+  categoria: FeedPostCategoria;
+  autor_id?: string | null;
+  autor_tipo: FeedPostAutorTipo;
+  titulo: string;
+  conteudo: string;
+  entidade_relacionada_tipo?: string | null;
+  entidade_relacionada_id?: string | null;
+  acao_realizada?: 'criou' | 'editou' | 'excluiu' | 'concluiu' | 'comentou' | null;
+  visibilidade: FeedPostVisibilidade;
+  departamento_id?: string | null;
+  anexos: string[];
+  mencoes: string[];
+  tags: string[];
+  metadados?: Record<string, unknown>;
+  fixado: boolean;
+  editado: boolean;
+  editado_em?: string | null;
+  criado_em: string;
+  atualizado_em: string;
+  excluido_em?: string | null;
+  autor?: Profile;
+}
+
+export interface FeedComment {
+  id: string;
+  user_id: string;
+  feed_id: string;
+  comentario_pai_id?: string | null;
+  autor_id?: string | null;
+  conteudo: string;
+  anexos: string[];
+  mencoes: string[];
+  editado: boolean;
+  criado_em: string;
+  atualizado_em: string;
+  excluido_em?: string | null;
+  autor?: Profile;
+}
+
+export interface FeedReaction {
+  id: string;
+  user_id: string;
+  feed_id?: string | null;
+  comentario_id?: string | null;
+  usuario_id: string;
+  tipo_reacao: FeedReacaoTipo;
+  criado_em: string;
+  usuario?: Profile;
+}
+
+export interface FeedView {
+  id: string;
+  user_id: string;
+  feed_id: string;
+  usuario_id: string;
+  visualizado_em: string;
+}
+
+export interface FeedUserPreferences {
+  id: string;
+  user_id: string;
+  usuario_id: string;
+  categorias_silenciadas: FeedPostCategoria[];
+  notificar_mencoes: boolean;
+  notificar_respostas: boolean;
+  notificar_reacoes: boolean;
+  frequencia_resumo_email: 'nunca' | 'diario' | 'semanal';
+}
+
+export interface FeedShare {
+  id: string;
+  user_id: string;
+  feed_original_id: string;
+  usuario_id: string;
+  comentario_compartilhamento?: string | null;
+  criado_em: string;
+}
+

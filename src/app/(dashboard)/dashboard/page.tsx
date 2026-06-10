@@ -1,7 +1,6 @@
 "use client"
 
 import { useCallback, useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
 import {
   MessageSquare,
   UserPlus,
@@ -9,13 +8,6 @@ import {
   Send,
 } from 'lucide-react'
 
-import {
-  loadActivity,
-  loadConversationsSeries,
-  loadMetrics,
-  loadPipelineDonut,
-  loadResponseTime,
-} from '@/lib/dashboard/queries'
 import type {
   ActivityItem,
   ConversationsSeriesPoint,
@@ -34,19 +26,20 @@ import { ActivityFeed } from '@/components/dashboard/activity-feed'
 
 type RangeDays = 7 | 30 | 90
 
+async function fetchDashboard(section: string, range?: number) {
+  const params = new URLSearchParams({ section })
+  if (range) params.set('range', String(range))
+  const res = await fetch(`/api/dashboard?${params}`)
+  if (!res.ok) throw new Error(await res.text())
+  return res.json()
+}
+
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<MetricsBundle | null>(null)
   const [metricsLoading, setMetricsLoading] = useState(true)
 
   const [range, setRange] = useState<RangeDays>(30)
-  // Keep a cache per range so switching tabs doesn't re-fetch what we
-  // already have. Ranges the user hasn't opened yet stay null and
-  // trigger a fetch on first view.
-  const [series, setSeries] = useState<Record<RangeDays, ConversationsSeriesPoint[] | null>>({
-    7: null,
-    30: null,
-    90: null,
-  })
+  const [series, setSeries] = useState<Record<RangeDays, ConversationsSeriesPoint[] | null>>({ 7: null, 30: null, 90: null })
   const [seriesLoading, setSeriesLoading] = useState(true)
 
   const [pipeline, setPipeline] = useState<PipelineDonutData | null>(null)
@@ -59,169 +52,104 @@ export default function DashboardPage() {
   const [activityLoading, setActivityLoading] = useState(true)
 
   const loadAll = useCallback(() => {
-    const db = createClient()
-
-    // Kick everything off in parallel. Each block has its own
-    // setState + finally so a slow query doesn't hold up faster
-    // sections — each widget shows its own skeleton independently.
-    void loadMetrics(db)
-      .then((m) => setMetrics(m))
-      .catch((err) => console.error('[dashboard] metrics failed:', err))
+    fetchDashboard('metrics')
+      .then(setMetrics).catch((e) => console.error('[dashboard] metrics:', e))
       .finally(() => setMetricsLoading(false))
 
-    void loadConversationsSeries(db, 30)
-      .then((s) => setSeries((prev) => ({ ...prev, 30: s })))
-      .catch((err) => console.error('[dashboard] series failed:', err))
+    fetchDashboard('series', 30)
+      .then((s: ConversationsSeriesPoint[]) => setSeries((prev) => ({ ...prev, 30: s })))
+      .catch((e) => console.error('[dashboard] series:', e))
       .finally(() => setSeriesLoading(false))
 
-    void loadPipelineDonut(db)
-      .then((p) => setPipeline(p))
-      .catch((err) => console.error('[dashboard] pipeline failed:', err))
+    fetchDashboard('pipeline')
+      .then(setPipeline).catch((e) => console.error('[dashboard] pipeline:', e))
       .finally(() => setPipelineLoading(false))
 
-    void loadResponseTime(db)
-      .then((r) => setResponseTime(r))
-      .catch((err) => console.error('[dashboard] response time failed:', err))
+    fetchDashboard('response-time')
+      .then(setResponseTime).catch((e) => console.error('[dashboard] response-time:', e))
       .finally(() => setResponseTimeLoading(false))
 
-    // Fetch up to 50 so the biggest page-size option in the feed
-    // (50 rows) is already in memory — switching sizes then becomes
-    // a pure client-side slice with no extra round trip.
-    void loadActivity(db, 50)
-      .then((a) => setActivity(a))
-      .catch((err) => console.error('[dashboard] activity failed:', err))
+    fetchDashboard('activity')
+      .then(setActivity).catch((e) => console.error('[dashboard] activity:', e))
       .finally(() => setActivityLoading(false))
   }, [])
 
-  useEffect(() => {
-    loadAll()
-  }, [loadAll])
+  useEffect(() => { loadAll() }, [loadAll])
 
-  // Range switch handler — kept in an event callback (not an effect)
-  // so the setState calls stay out of the react-hooks/set-state-in-effect
-  // rule's way. The cached bucket check means switching back to a
-  // previously-viewed range is instant and doesn't re-fetch.
-  const handleRangeChange = useCallback(
-    (r: RangeDays) => {
-      setRange(r)
-      if (series[r] !== null) return
-      setSeriesLoading(true)
-      const db = createClient()
-      loadConversationsSeries(db, r)
-        .then((s) => setSeries((prev) => ({ ...prev, [r]: s })))
-        .catch((err) => console.error('[dashboard] series failed:', err))
-        .finally(() => setSeriesLoading(false))
-    },
-    [series],
-  )
+  const handleRangeChange = useCallback((r: RangeDays) => {
+    setRange(r)
+    if (series[r] !== null) return
+    setSeriesLoading(true)
+    fetchDashboard('series', r)
+      .then((s: ConversationsSeriesPoint[]) => setSeries((prev) => ({ ...prev, [r]: s })))
+      .catch((e) => console.error('[dashboard] series:', e))
+      .finally(() => setSeriesLoading(false))
+  }, [series])
 
   return (
     <div className="space-y-5">
-      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+        <h1 className="text-2xl font-bold text-white">Painel</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Live analytics across conversations, contacts, deals, broadcasts, and automations.
+          Análise em tempo real de conversas, contatos, negócios, transmissões e automações.
         </p>
       </div>
 
-      {/* Metric cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metricsLoading || !metrics ? (
           Array.from({ length: 4 }).map((_, i) => <SkeletonCard key={i} />)
         ) : (
           <>
             <MetricCard
-              title="Active Conversations"
+              title="Conversas Ativas"
               value={metrics.activeConversations.current.toLocaleString()}
               icon={MessageSquare}
-              delta={{
-                sign: metrics.activeConversations.previous,
-                label: deltaLabel(metrics.activeConversations.previous, 'new today vs yesterday'),
-              }}
+              delta={{ sign: metrics.activeConversations.previous, label: deltaLabel(metrics.activeConversations.previous, 'hoje vs ontem') }}
             />
             <MetricCard
-              title="New Contacts Today"
+              title="Novos Contatos Hoje"
               value={metrics.newContactsToday.current.toLocaleString()}
               icon={UserPlus}
-              delta={{
-                sign:
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                label: deltaLabel(
-                  metrics.newContactsToday.current - metrics.newContactsToday.previous,
-                  'vs yesterday',
-                ),
-              }}
+              delta={{ sign: metrics.newContactsToday.current - metrics.newContactsToday.previous, label: deltaLabel(metrics.newContactsToday.current - metrics.newContactsToday.previous, 'vs ontem') }}
             />
             <MetricCard
-              title="Open Deals Value"
+              title="Valor de Negócios Abertos"
               value={formatCurrency(metrics.openDealsValue)}
               icon={DollarSign}
-              subtitle={`${metrics.openDealsCount} open deal${metrics.openDealsCount === 1 ? '' : 's'}`}
+              subtitle={`${metrics.openDealsCount} ${metrics.openDealsCount === 1 ? 'negócio aberto' : 'negócios abertos'}`}
             />
             <MetricCard
-              title="Messages Sent Today"
+              title="Mensagens Enviadas Hoje"
               value={metrics.messagesSentToday.current.toLocaleString()}
               icon={Send}
-              delta={{
-                sign:
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                label: deltaLabel(
-                  metrics.messagesSentToday.current - metrics.messagesSentToday.previous,
-                  'vs yesterday',
-                ),
-              }}
+              delta={{ sign: metrics.messagesSentToday.current - metrics.messagesSentToday.previous, label: deltaLabel(metrics.messagesSentToday.current - metrics.messagesSentToday.previous, 'vs ontem') }}
             />
           </>
         )}
       </div>
 
-      {/* Quick actions */}
       <QuickActions />
 
-      {/* Charts row */}
-      {/* items-stretch (the grid default) stretches the two columns to
-          match the tallest sibling; adding h-full on each wrapper and
-          on the inner panels makes both cards actually fill that
-          stretched height so their rounded borders line up. Without
-          this, the pipeline card rendered at its natural (shorter)
-          height while the line chart drove the row height. */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
         <div className="h-full lg:col-span-3">
-          <ConversationsChart
-            series={series}
-            loading={seriesLoading}
-            range={range}
-            onRangeChange={handleRangeChange}
-          />
+          <ConversationsChart series={series} loading={seriesLoading} range={range} onRangeChange={handleRangeChange} />
         </div>
         <div className="h-full lg:col-span-2">
           <PipelineDonut data={pipeline} loading={pipelineLoading} />
         </div>
       </div>
 
-      {/* Response time */}
       <ResponseTimeChart data={responseTime} loading={responseTimeLoading} />
-
-      {/* Activity feed */}
       <ActivityFeed items={activity} loading={activityLoading} />
     </div>
   )
 }
 
-// ------------------------------------------------------------
-
 function formatCurrency(v: number): string {
-  return new Intl.NumberFormat(undefined, {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(v)
+  return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
 }
 
 function deltaLabel(delta: number, suffix: string): string {
-  if (delta === 0) return `No change ${suffix}`
-  const sign = delta > 0 ? '+' : ''
-  return `${sign}${delta.toLocaleString()} ${suffix}`
+  if (delta === 0) return `Sem alteração ${suffix}`
+  return `${delta > 0 ? '+' : ''}${delta.toLocaleString()} ${suffix}`
 }

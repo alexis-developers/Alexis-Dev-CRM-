@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Settings, MessageSquare, Tag, User } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Settings, MessageSquare, Tag, User, UserPlus, Key } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { WhatsAppConfig } from '@/components/settings/whatsapp-config';
 import { TemplateManager } from '@/components/settings/template-manager';
@@ -9,8 +10,11 @@ import { TagManager } from '@/components/settings/tag-manager';
 import { ProfileForm } from '@/components/settings/profile-form';
 import { PasswordForm } from '@/components/settings/password-form';
 import { SessionsCard } from '@/components/settings/sessions-card';
+import { InviteManager } from '@/components/settings/invite-manager';
+import { LicenseManager } from '@/components/settings/license-manager';
+import { authClient } from '@/lib/auth/client';
 
-const TAB_VALUES = ['profile', 'whatsapp', 'templates', 'tags'] as const;
+const TAB_VALUES = ['profile', 'whatsapp', 'templates', 'tags', 'convites', 'licencas'] as const;
 type TabValue = (typeof TAB_VALUES)[number];
 
 function isTabValue(v: string | null): v is TabValue {
@@ -20,11 +24,9 @@ function isTabValue(v: string | null): v is TabValue {
 export default function SettingsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isSystemOwner, setIsSystemOwner] = useState(false);
 
-  // The URL is the single source of truth for the active tab — no
-  // local state, no sync effect. A previous revision duplicated this
-  // into `useState` + a sync effect, which tripped React 19's
-  // set-state-in-effect rule and was also redundant.
   const queryTab = searchParams.get('tab');
   const tab: TabValue = isTabValue(queryTab) ? queryTab : 'profile';
 
@@ -34,38 +36,49 @@ export default function SettingsPage() {
     router.replace(`/settings?${params.toString()}`, { scroll: false });
   };
 
+  useEffect(() => {
+    async function checkRole() {
+      const res = await fetch('/api/me');
+      if (res.ok) {
+        const data = await res.json();
+        if (data?.isSuperAdmin) setIsSuperAdmin(true);
+        if (data?.isSystemOwner) setIsSystemOwner(true);
+      }
+    }
+    checkRole();
+  }, []);
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-white">Settings</h1>
+        <h1 className="text-2xl font-bold text-white">Configurações</h1>
         <p className="text-sm text-slate-400 mt-1">
-          Manage your profile, WhatsApp® integration, message templates, and
-          tags.
+          Gerencie seu perfil, integração com o WhatsApp®, modelos de mensagens e tags.
         </p>
       </div>
 
       <Tabs value={tab} onValueChange={(v) => onChange(v as TabValue)}>
-        <TabsList className="bg-slate-900 border border-slate-700">
+        <TabsList className="bg-slate-900 border border-slate-700 flex-wrap h-auto gap-1">
           <TabsTrigger
             value="profile"
             className="data-active:bg-slate-800 data-active:text-violet-400 text-slate-400"
           >
             <User className="size-4" />
-            Profile
+            Perfil
           </TabsTrigger>
           <TabsTrigger
             value="whatsapp"
             className="data-active:bg-slate-800 data-active:text-violet-400 text-slate-400"
           >
             <Settings className="size-4" />
-            WhatsApp Config
+            WhatsApp
           </TabsTrigger>
           <TabsTrigger
             value="templates"
             className="data-active:bg-slate-800 data-active:text-violet-400 text-slate-400"
           >
             <MessageSquare className="size-4" />
-            Templates
+            Modelos
           </TabsTrigger>
           <TabsTrigger
             value="tags"
@@ -74,6 +87,24 @@ export default function SettingsPage() {
             <Tag className="size-4" />
             Tags
           </TabsTrigger>
+          {isSuperAdmin && (
+            <TabsTrigger
+              value="convites"
+              className="data-active:bg-slate-800 data-active:text-violet-400 text-slate-400"
+            >
+              <UserPlus className="size-4" />
+              Convites
+            </TabsTrigger>
+          )}
+          {isSystemOwner && (
+            <TabsTrigger
+              value="licencas"
+              className="data-active:bg-slate-800 data-active:text-violet-400 text-slate-400"
+            >
+              <Key className="size-4" />
+              Licenças OEM
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile" className="space-y-6">
@@ -93,6 +124,17 @@ export default function SettingsPage() {
         <TabsContent value="tags">
           <TagManager />
         </TabsContent>
+
+        {isSuperAdmin && (
+          <TabsContent value="convites">
+            <InviteManager />
+          </TabsContent>
+        )}
+        {isSystemOwner && (
+          <TabsContent value="licencas">
+            <LicenseManager />
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );

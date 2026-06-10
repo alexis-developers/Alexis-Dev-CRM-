@@ -1,0 +1,11 @@
+node_modules
+npm-debug.log
+README.md
+.next
+.git
+.gitignore
+.dockerignore
+.env*.local
+Dockerfile
+docker-compose.yml
+supabase-infra

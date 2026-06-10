@@ -1,28 +1,30 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { createCompatClient } from '@/lib/db/compat'
+import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
+// Drop-in replacement for the Supabase server client.
+// Session is read from BetterAuth cookies via next/headers.
 export async function createClient() {
-  const cookieStore = await cookies()
+  const headerStore = await headers()
+  const cookieHeader = headerStore.get('cookie') ?? ''
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll()
-        },
-        setAll(cookiesToSet) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            )
-          } catch {
-            // The `setAll` method was called from a Server Component.
-            // This can be ignored if you have middleware refreshing sessions.
-          }
-        },
-      },
-    }
-  )
+  const session = await auth.api.getSession({
+    headers: new Headers({ cookie: cookieHeader }),
+  })
+
+  return {
+    ...createCompatClient(),
+    auth: {
+      getUser: async () => ({
+        data: { user: session?.user ?? null },
+        error: null,
+      }),
+      getSession: async () => ({
+        data: { session: session ?? null },
+        error: null,
+      }),
+    },
+    _session: session,
+    _user: session?.user ?? null,
+  }
 }
