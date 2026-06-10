@@ -2,8 +2,10 @@ import * as schema from './schema'
 
 type AnyDrizzle = any
 
-// Module-level singleton — set once per isolate (CF) or process (local dev)
+// Module-level singleton — one instance per Worker isolate / Node.js process
 let _db: AnyDrizzle | null = null
+
+// ─── Local dev (Node.js + better-sqlite3) ────────────────────────────────────
 
 function initLocalDb(): AnyDrizzle {
   const Database = require('better-sqlite3')
@@ -16,7 +18,17 @@ function initLocalDb(): AnyDrizzle {
   return drizzle(sqlite, { schema })
 }
 
-// Called by middleware on Cloudflare — sets the D1 binding once per isolate
+// ─── Cloudflare D1 (sync init — CF context is available when route handlers run) ──
+
+function initCloudflareDb(): AnyDrizzle {
+  const { getCloudflareContext } = require('@opennextjs/cloudflare')
+  const ctx = getCloudflareContext()
+  const { drizzle } = require('drizzle-orm/d1')
+  return drizzle(ctx.env.DB, { schema })
+}
+
+// ─── Called from middleware (optional early-init) ─────────────────────────────
+
 export function initDbForCloudflare(d1: any): void {
   if (!_db) {
     const { drizzle } = require('drizzle-orm/d1')
@@ -24,7 +36,8 @@ export function initDbForCloudflare(d1: any): void {
   }
 }
 
-// Async getter — safe in all contexts
+// ─── Async getter — safe in all contexts ─────────────────────────────────────
+
 export async function getDb(): Promise<AnyDrizzle> {
   if (_db) return _db
 
@@ -33,29 +46,38 @@ export async function getDb(): Promise<AnyDrizzle> {
     return _db
   }
 
-  // Cloudflare: lazy init via getCloudflareContext (fallback if middleware missed it)
+  // CF Workers: try sync init first (globalThis.__openNextCloudflareContext is already set)
   try {
+    _db = initCloudflareDb()
+    return _db
+  } catch {
+    // Fallback: async context (edge cases)
     const { getCloudflareContext } = await import('@opennextjs/cloudflare')
     const ctx = await getCloudflareContext({ async: true } as any)
     const { drizzle } = await import('drizzle-orm/d1')
     _db = drizzle((ctx as any).env.DB, { schema })
-  } catch {
-    // If opennext is unavailable, try local
-    _db = initLocalDb()
+    return _db
   }
-  return _db
 }
 
-// Synchronous proxy — works on local dev (after initLocalDb) and on CF (after middleware)
+// ─── Synchronous proxy ───────────────────────────────────────────────────────
+// Works on local dev immediately.
+// Works on CF after the first DB access (lazy sync init via getCloudflareContext).
+
 export const db: AnyDrizzle = new Proxy({} as AnyDrizzle, {
   get(_, prop: string | symbol) {
     if (!_db) {
       if (process.env.NODE_ENV === 'development') {
         _db = initLocalDb()
       } else {
-        throw new Error(
-          `[db] Not initialized. Ensure the middleware ran initDbForCloudflare() before accessing 'db.${String(prop)}'.`
-        )
+        // CF Workers: sync init — CF context is ready when route handlers run
+        try {
+          _db = initCloudflareDb()
+        } catch (err) {
+          throw new Error(
+            `[db] Cloudflare context not available yet. Property: ${String(prop)}. Cause: ${err}`
+          )
+        }
       }
     }
     return _db[prop]
