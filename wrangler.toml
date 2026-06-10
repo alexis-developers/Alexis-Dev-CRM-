@@ -1,13 +1,9 @@
 name = "wa-crm"
 compatibility_date = "2025-01-01"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".vercel/output/static"
+pages_build_output_dir = ".open-next/assets"
 
 [[d1_databases]]
 binding = "DB"
-database_name = "wa-crm-db"
-database_id = "local"
-
-[[r2_buckets]]
-binding = "AVATARS"
-bucket_name = "wa-crm-avatars"
+database_name = "alexis-crm-db"
+database_id = "4ea1116f-c6e0-48bb-8a41-851aa9dd9fdf"

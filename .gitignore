@@ -43,3 +43,14 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 .vscode/
+
+# SQLite local database
+*.db
+*.db-shm
+*.db-wal
+
+# Generated license key files
+/licenses/
+
+# Cloudflare build output
+/.open-next/

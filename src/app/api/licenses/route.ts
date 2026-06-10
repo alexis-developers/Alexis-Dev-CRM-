@@ -14,6 +14,7 @@ function generateKey(): string {
 }
 
 function saveKeysToFile(keys: string[], label: string, role: string) {
+  if (process.env.CF_PAGES) return null  // no filesystem on Cloudflare Workers
   try {
     const dir = join(process.cwd(), 'licenses')
     mkdirSync(dir, { recursive: true })
